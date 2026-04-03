@@ -1,0 +1,11 @@
+# Music generation dependencies
+# Note: stable-audio-tools requires gradio>=5.20.0 which is not available
+# Using diffusers directly with stable-audio-open-1.0 model instead
+diffusers>=0.36.0
+torchaudio>=2.0.0
+librosa>=0.11.0
+
+# Dev dependencies
+pytest>=7.0.0
+black>=23.0.0
+mypy>=1.0.0
