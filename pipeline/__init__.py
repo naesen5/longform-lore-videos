@@ -1,1 +1,1 @@
-# Pipeline package for longform-lore-videos
+"""Image generation pipeline using stable-diffusion.cpp."""
