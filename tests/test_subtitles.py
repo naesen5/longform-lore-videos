@@ -1,6 +1,5 @@
 """Tests for subtitle generation pipeline."""
 import json
-import pytest
 
 from pipeline.subtitles import SubtitleGenerator
 
