@@ -122,7 +122,8 @@ async def stream_job_events(job_id: str):
                 break
 
             if current_state.status == JobStatus.FAILED:
-                yield f"data: {JobEvent(data=current_state.error or 'Job failed').model_dump_json()}\n\n"
+                err_msg = current_state.error or "Job failed"
+                yield f"data: {JobEvent(data=err_msg).model_dump_json()}\n\n"
                 break
 
             if current_state.progress_pct != prev_progress:
