@@ -2,9 +2,12 @@
 
 import os
 import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from moviepy import AudioFileClip, ColorClip, VideoFileClip
+import numpy as np
 
 from longform_lore_videos.assembler import VideoAssembler
 
@@ -40,40 +43,38 @@ class TestVideoAssembler:
             
             assert result is None  # No chapter clips to assemble
 
-    @patch("moviepy.VideoFileClip")
-    @patch("moviepy.AudioFileClip")
-    def test_assemble_single_chapter(self, mock_audio, mock_video):
-        """Assemble with single chapter produces valid output."""
+    @pytest.mark.integration
+    def test_assemble_single_chapter_integration(self):
+        """Assemble with single chapter produces valid output (integration test)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             job_dir = os.path.join(tmpdir, "job456")
             chapter_dir = os.path.join(job_dir, "chapters", "chapter_001")
             os.makedirs(chapter_dir)
             
-            # Create dummy asset files
-            with open(os.path.join(chapter_dir, "image_001.png"), "w") as f:
-                f.write("dummy")
-            with open(os.path.join(chapter_dir, "narration.mp3"), "w") as f:
-                f.write("dummy")
-            with open(os.path.join(chapter_dir, "subtitles.srt"), "w") as f:
-                f.write("dummy")
+            # Create actual test assets using moviepy
+            # 1. Create a dummy image (100x100 red) using ColorClip
+            img_path = os.path.join(chapter_dir, "image_001.png")
+            clip = ColorClip((100, 100), duration=5.0, color=(255, 0, 0))
+            clip.write_frame(img_path)
+            clip.close()
+            
+            # 2. Create a dummy audio file (10 seconds of silence)
+            audio_path = os.path.join(chapter_dir, "narration.mp3")
+            audio = AudioFileClip(__file__)  # use this file as source
+            audio = audio.subclip(0, min(10.0, audio.duration))
+            audio.write_audiofile(audio_path, fps=22050)
+            audio.close()
+            
+            # 3. Create a dummy subtitles file
+            srt_path = os.path.join(chapter_dir, "subtitles.srt")
+            with open(srt_path, "w") as f:
+                f.write("1\n00:00:00,000 --> 00:00:05,000\nTest subtitle\n\n")
             
             assembler = VideoAssembler()
-            
-            # Mock the video/audio clips
-            mock_clip = MagicMock()
-            mock_clip.duration = 10.0
-            mock_clip.write_videofile = MagicMock(return_value=None)
-            mock_video.return_value.__enter__ = MagicMock(return_value=mock_clip)
-            mock_video.return_value.__exit__ = MagicMock(return_value=None)
-            
-            mock_audio_clip = MagicMock()
-            mock_audio_clip.volumex = MagicMock(return_value=mock_audio_clip)
-            mock_audio.return_value.__enter__ = MagicMock(return_value=mock_audio_clip)
-            mock_audio.return_value.__exit__ = MagicMock(return_value=None)
-            
             result = assembler.assemble(job_dir)
             
             assert result is not None
+            assert os.path.exists(result)
 
     def test_quality_presets(self):
         """Verify quality preset parameters."""
