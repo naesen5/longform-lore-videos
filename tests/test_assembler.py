@@ -62,12 +62,29 @@ class TestVideoAssembler:
             img = Image.fromarray(arr)
             img.save(img_path)
             
-            # 2. Create a dummy audio file (10 seconds of silence)
+            # 2. Create a dummy audio file (10 seconds of silence) using numpy
             audio_path = os.path.join(chapter_dir, "narration.mp3")
-            audio = AudioFileClip(__file__)  # use this file as source
-            audio = audio.subclip(0, min(10.0, audio.duration))
-            audio.write_audiofile(audio_path, fps=22050)
-            audio.close()
+            # Generate a simple 10-second mono audio file with numpy + scipy
+            import wave
+            import struct
+            
+            # Create a simple WAV file with silent audio
+            sample_rate = 22050
+            duration = 10  # seconds
+            num_samples = sample_rate * duration
+            
+            with wave.open(audio_path.replace('.mp3', '.wav'), 'w') as wav:
+                wav.setnchannels(1)  # mono
+                wav.setsampwidth(2)  # 16-bit
+                wav.setframerate(sample_rate)
+                for _ in range(num_samples):
+                    wav.writeframes(struct.pack('h', 0))  # silence
+            
+            # Convert WAV to MP3 using moviepy (minimal dependency)
+            audio_clip = AudioFileClip(audio_path.replace('.mp3', '.wav'))
+            audio_clip.write_audiofile(audio_path, fps=22050, verbose=False, logger=None)
+            audio_clip.close()
+            os.remove(audio_path.replace('.mp3', '.wav'))
             
             # 3. Create a dummy subtitles file
             srt_path = os.path.join(chapter_dir, "subtitles.srt")
