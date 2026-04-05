@@ -10,6 +10,7 @@ setup(
     extras_require={
         "dev": [
             "pytest>=7.0",
+            "Pillow>=9.0",
         ],
     },
 )

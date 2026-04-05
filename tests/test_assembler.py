@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from moviepy import AudioFileClip, ColorClip, VideoFileClip
 import numpy as np
+from PIL import Image
 
 from longform_lore_videos.assembler import VideoAssembler
 
@@ -52,11 +53,14 @@ class TestVideoAssembler:
             os.makedirs(chapter_dir)
             
             # Create actual test assets using moviepy
-            # 1. Create a dummy image (100x100 red) using ColorClip
+            # 1. Create a dummy image (100x100 red) using moviepy's ImageClip
             img_path = os.path.join(chapter_dir, "image_001.png")
-            clip = ColorClip((100, 100), duration=5.0, color=(255, 0, 0))
-            clip.write_frame(img_path)
-            clip.close()
+            # Create a simple PNG using numpy + PIL
+            from PIL import Image
+            arr = np.zeros((100, 100, 3), dtype=np.uint8)
+            arr[:, :, 0] = 255  # red
+            img = Image.fromarray(arr)
+            img.save(img_path)
             
             # 2. Create a dummy audio file (10 seconds of silence)
             audio_path = os.path.join(chapter_dir, "narration.mp3")
