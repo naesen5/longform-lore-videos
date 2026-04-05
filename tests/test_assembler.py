@@ -82,7 +82,7 @@ class TestVideoAssembler:
             
             # Convert WAV to MP3 using moviepy (minimal dependency)
             audio_clip = AudioFileClip(audio_path.replace('.mp3', '.wav'))
-            audio_clip.write_audiofile(audio_path, fps=22050, verbose=False, logger=None)
+            audio_clip.write_audiofile(audio_path, fps=22050)
             audio_clip.close()
             os.remove(audio_path.replace('.mp3', '.wav'))
             
