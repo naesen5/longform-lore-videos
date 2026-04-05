@@ -1,0 +1,11 @@
+{
+  "job_id": "test123",
+  "status": "complete",
+  "stage": null,
+  "progress_pct": 100,
+  "started_at": "2026-04-05T09:41:18.225689",
+  "completed_at": "2026-04-05T09:41:18.225884",
+  "error": null,
+  "output_path": "output/test123",
+  "chapter_count": 1
+}
