@@ -3,7 +3,7 @@
 import asyncio
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import FileResponse
@@ -15,10 +15,8 @@ from api.schemas import (
     JobResponse,
     JobStatusResponse,
     JobSubmission,
-    Quality,
 )
 from longform_lore_videos.pipeline.orchestrator import (
-    JobState,
     JobStatus,
     PipelineOrchestrator,
 )
