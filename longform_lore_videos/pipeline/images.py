@@ -25,10 +25,13 @@ class ImageGenerator:
         """
         cmd = [
             "stable-diffusion.cpp",
-            "--prompt", prompt,
-            "--quality", quality,
-            "--output", output_path,
+            "--prompt",
+            prompt,
+            "--quality",
+            quality,
+            "--output",
+            output_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         Path(output_path).touch()
         return {"path": output_path}

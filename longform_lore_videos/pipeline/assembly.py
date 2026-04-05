@@ -11,7 +11,9 @@ class VideoAssembler:
         """Initialize video assembler."""
         pass
 
-    def assemble_video(self, chapter_paths: List[str], audio_path: str, output_path: str) -> Dict[str, Any]:
+    def assemble_video(
+        self, chapter_paths: List[str], audio_path: str, output_path: str
+    ) -> Dict[str, Any]:
         """Assemble video from chapters.
 
         Args:

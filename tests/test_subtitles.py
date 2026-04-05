@@ -26,7 +26,9 @@ class TestSubtitleGenerator:
         mock_result.stdout = b"00:00:00,000 --> 00:00:01,000\nSubtitle\n"
         mock_result.stderr = b""
 
-        with patch("longform_lore_videos.pipeline.subtitles.subprocess.run", return_value=mock_result):
+        with patch(
+            "longform_lore_videos.pipeline.subtitles.subprocess.run", return_value=mock_result
+        ):
             generator.generate_subtitles(
                 audio_path=str(audio_path),
                 output_path=str(srt_path),
@@ -47,7 +49,9 @@ class TestSubtitleGenerator:
         mock_result.stdout = b"00:00:00,000 --> 00:00:01,000\nSubtitle\n"
         mock_result.stderr = b""
 
-        with patch("longform_lore_videos.pipeline.subtitles.subprocess.run", return_value=mock_result):
+        with patch(
+            "longform_lore_videos.pipeline.subtitles.subprocess.run", return_value=mock_result
+        ):
             generator.generate_subtitles(
                 audio_path=str(audio_path),
                 output_path=str(srt_path),
@@ -69,7 +73,9 @@ class TestSubtitleGenerator:
         mock_result.stdout = b"00:00:00,000 --> 00:00:01,000\nSubtitle\n"
         mock_result.stderr = b""
 
-        with patch("longform_lore_videos.pipeline.subtitles.subprocess.run", return_value=mock_result):
+        with patch(
+            "longform_lore_videos.pipeline.subtitles.subprocess.run", return_value=mock_result
+        ):
             generator.generate_subtitles(
                 audio_path=str(audio_path),
                 output_path=str(srt_path),

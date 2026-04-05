@@ -1,6 +1,5 @@
 """Tests for video assembly pipeline."""
 
-
 import pytest
 
 from longform_lore_videos.pipeline.assembly import VideoAssembler

@@ -1,6 +1,5 @@
 """Tests for TTS narration pipeline."""
 
-
 import pytest
 
 from longform_lore_videos.pipeline.tts import TTSNarrator

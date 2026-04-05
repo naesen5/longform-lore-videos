@@ -23,5 +23,7 @@ class ScriptGenerator:
         """
         return {
             "title": f"Script for {topic}",
-            "chapters": [{"title": f"Chapter {i+1}", "content": "Content..."} for i in range(chapter_count)],
+            "chapters": [
+                {"title": f"Chapter {i + 1}", "content": "Content..."} for i in range(chapter_count)
+            ],
         }

@@ -23,7 +23,7 @@ class SubtitleGenerator:
             Metadata with path.
         """
         cmd = ["whisper.cpp", "--file", audio_path, "--output", output_path]
-        result = subprocess.run(cmd, capture_output=True, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         Path(output_path).write_text("1\n00:00:00,000 --> 00:00:01,000\nSubtitle\n")
         return {"path": output_path}

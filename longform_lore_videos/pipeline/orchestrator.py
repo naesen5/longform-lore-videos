@@ -125,11 +125,13 @@ class PipelineOrchestrator:
                     continue
 
                 if job_id in self._cancellation_flags:
-                    return state.model_copy(update={
-                        "status": JobStatus.FAILED,
-                        "error": "Job cancelled",
-                        "completed_at": datetime.utcnow(),
-                    })
+                    return state.model_copy(
+                        update={
+                            "status": JobStatus.FAILED,
+                            "error": "Job cancelled",
+                            "completed_at": datetime.utcnow(),
+                        }
+                    )
 
                 state = await self._run_stage(job_id, stage_name, stage_status, state)
 
@@ -137,19 +139,23 @@ class PipelineOrchestrator:
                     return state
 
             # All stages completed successfully
-            state = state.model_copy(update={
-                "status": JobStatus.COMPLETE,
-                "completed_at": datetime.utcnow(),
-                "progress_pct": 100,
-            })
+            state = state.model_copy(
+                update={
+                    "status": JobStatus.COMPLETE,
+                    "completed_at": datetime.utcnow(),
+                    "progress_pct": 100,
+                }
+            )
             await self._save_state(job_id, state)
 
         except Exception as e:
-            state = state.model_copy(update={
-                "status": JobStatus.FAILED,
-                "error": str(e),
-                "completed_at": datetime.utcnow(),
-            })
+            state = state.model_copy(
+                update={
+                    "status": JobStatus.FAILED,
+                    "error": str(e),
+                    "completed_at": datetime.utcnow(),
+                }
+            )
             await self._save_state(job_id, state)
 
         return state
@@ -171,10 +177,12 @@ class PipelineOrchestrator:
         stage_path = self.output_dir / job_id / stage_name
 
         # Update state
-        state = state.model_copy(update={
-            "status": stage_status,
-            "stage": stage_name,
-        })
+        state = state.model_copy(
+            update={
+                "status": stage_status,
+                "stage": stage_name,
+            }
+        )
         await self._save_state(job_id, state)
 
         # Simulate stage work (replace with actual implementation)
@@ -192,9 +200,11 @@ class PipelineOrchestrator:
         )
         progress_pct = completed_weight
 
-        state = state.model_copy(update={
-            "progress_pct": progress_pct,
-        })
+        state = state.model_copy(
+            update={
+                "progress_pct": progress_pct,
+            }
+        )
         await self._save_state(job_id, state)
 
         return state

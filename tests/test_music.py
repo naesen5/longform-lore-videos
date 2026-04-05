@@ -1,6 +1,5 @@
 """Tests for music generation pipeline."""
 
-
 import pytest
 
 from longform_lore_videos.pipeline.music import MusicGenerator
