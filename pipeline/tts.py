@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-from TTS import TTS
+from TTS.tts import tts
+from TTS.configs.xts_config import XtsConfig
 from pyloudnorm import loudnorm
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -38,14 +39,27 @@ class NarrationGenerator:
         self._model_id = config["model"]
         self._sample_rate = config["sample_rate"]
 
-    def _init_model(self) -> TTS:
+    def _init_model(self):
         if self._model is None:
-            self._model = TTS(model_name=self._model_id, use_gpu=False)
+            self._model = self._load_model(self._model_id)
         return self._model
 
-    def generate_chapter(self, text: str, chapter_num: int, job_id: str, output_dir: Optional[str] = None) -> float:
+    def _load_model(self, model_id: str):
+        """Load TTS model by name."""
+        # Coqui TTS uses a model loader pattern
+        from TTS.tts.models import load_model
+        return load_model(model_name=model_id, use_gpu=False)
+
+    def generate_chapter(
+        self,
+        text: str,
+        chapter_num: int,
+        job_id: str,
+        output_dir: Optional[str] = None,
+    ) -> float:
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
+
         if len(text) > 5000:
             raise ValueError("Text too long (max 5000 chars)")
 
@@ -55,24 +69,51 @@ class NarrationGenerator:
 
         model = self._init_model()
 
+        # Generate audio using TTS.tts.tts()
         if self.preset == "hq" and self.voice_path:
-            audio = model.tts_from_file(text=text, speaker_wav=self.voice_path, language="en")
+            # Voice cloning mode
+            audio = tts(
+                text=text,
+                speaker_wav=self.voice_path,
+                language="en",
+                model=model,
+            )
         else:
-            audio = model.tts(text=text, language="en")
+            # Standard mode
+            audio = tts(
+                text=text,
+                language="en",
+                model=model,
+            )
 
+        # Normalize to -18 LUFS
         normalized = loudnorm(audio, target=-18.0)
         normalized = normalized.astype(np.float32)
 
+        # Save WAV with correct sample rate
         import soundfile as sf
         sf.write(str(output_path), normalized, self._sample_rate, subtype="PCM_16")
 
+        # Measure actual duration
         duration = len(normalized) / self._sample_rate
+
         return round(duration, 3)
 
-    def generate_batch(self, chapters: list[str], job_id: str, output_dir: Optional[str] = None) -> list[float]:
+    def generate_batch(
+        self,
+        chapters: list[str],
+        job_id: str,
+        output_dir: Optional[str] = None,
+    ) -> list[float]:
         durations = []
         for i, text in enumerate(chapters, start=1):
-            duration = self.generate_chapter(text=text, chapter_num=i, job_id=job_id, output_dir=output_dir)
+            duration = self.generate_chapter(
+                text=text,
+                chapter_num=i,
+                job_id=job_id,
+                output_dir=output_dir,
+            )
             durations.append(duration)
             print(f"Chapter {i}: {duration:.3f}s")
+
         return durations
