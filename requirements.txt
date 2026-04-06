@@ -1,4 +1,4 @@
 moviepy>=2.2.0
 pydantic>=2.0
-TS>=0.22.0
+TTS>=0.22.0
 pyloudnorm>=0.2.0
