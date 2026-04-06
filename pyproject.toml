@@ -11,6 +11,8 @@ dependencies = [
     "pydantic>=2.0",
     "moviepy>=2.0",
     "pillow>=10.0",
+    "TS>=0.22.0",
+    "pyloudnorm>=0.2.0",
 ]
 
 [project.optional-dependencies]
