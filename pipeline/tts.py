@@ -5,12 +5,17 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-from TTS.tts.utils.synthesis import synthesis
-from TTS.tts.utils import find_module
-from TTS.configs.xts_config import XtsConfig
-from pyloudnorm import loudnorm
+from pyloudnorm import normalize
+from pyloudnorm.meter import Meter
 
 warnings.filterwarnings("ignore", category=UserWarning)
+
+
+def loudnorm(audio: np.ndarray, target: float = -18.0, sample_rate: int = 24000) -> np.ndarray:
+    """Normalize audio to target loudness in dB LUFS."""
+    meter = Meter(rate=sample_rate)
+    loudness = meter.integrated_loudness(audio)
+    return normalize(audio, input_loudness=loudness, target_loudness=target)
 
 
 class NarrationGenerator:
@@ -42,16 +47,9 @@ class NarrationGenerator:
 
     def _init_model(self):
         if self._model is None:
-            self._model = self._load_model(self._model_id)
+            from TTS.api import TTS
+            self._model = TTS(model_name=self._model_id, progress_bar=False)
         return self._model
-
-    def _load_model(self, model_id: str):
-        """Load TTS model by name."""
-        # Coqui TTS uses a module finder pattern
-        from TTS.tts.utils import find_module
-        module_path = find_module(model_id)
-        model = find_module(module_path)
-        return model
 
     def generate_chapter(
         self,
@@ -71,31 +69,24 @@ class NarrationGenerator:
         output_path = out_dir / f"chapter_{chapter_num}.wav"
 
         model = self._init_model()
-        config = model.CONFIG
 
-        # Generate audio using TTS synthesis function
+        # Generate audio using TTS.tts()
         if self.preset == "hq" and self.voice_path:
-            # Voice cloning mode - pass speaker_wav as style_wav
-            audio = synthesis(
-                model=model,
+            # Voice cloning mode
+            audio = model.tts_with_vc(
                 text=text,
-                CONFIG=config,
-                use_cuda=False,
-                style_wav=self.voice_path,
-                language_id=0,
+                speaker_wav=self.voice_path,
+                language="en",
             )
         else:
             # Standard mode
-            audio = synthesis(
-                model=model,
+            audio = model.tts(
                 text=text,
-                CONFIG=config,
-                use_cuda=False,
-                language_id=0,
+                language="en",
             )
 
         # Normalize to -18 LUFS
-        normalized = loudnorm(audio, target=-18.0)
+        normalized = loudnorm(audio, target=-18.0, sample_rate=self._sample_rate)
         normalized = normalized.astype(np.float32)
 
         # Save WAV with correct sample rate
