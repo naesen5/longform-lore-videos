@@ -35,13 +35,11 @@ class TestNarrationGenerator:
         gen = NarrationGenerator(voice_path="/path/to/speaker.wav")
         assert gen.voice_path == "/path/to/speaker.wav"
 
-    @patch("pipeline.tts.TTS")
-    def test_generate_chapter_mock(self, mock_tts_class):
-        """Test generate_chapter with mocked TTS."""
-        # Mock TTS model
-        mock_model = MagicMock()
-        mock_model.tts.return_value = np.array([0.1, -0.1, 0.05, -0.05], dtype=np.float32)
-        mock_tts_class.return_value = mock_model
+    @patch("pipeline.tts.synthesis")
+    def test_generate_chapter_mock(self, mock_synthesis):
+        """Test generate_chapter with mocked synthesis."""
+        # Mock synthesis output
+        mock_synthesis.return_value = np.array([0.1, -0.1, 0.05, -0.05], dtype=np.float32)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             gen = NarrationGenerator(output_dir=tmpdir)
@@ -51,10 +49,10 @@ class TestNarrationGenerator:
                 job_id="test-job",
             )
 
-            # Verify model was called
-            mock_model.tts.assert_called_once()
-            args = mock_model.tts.call_args
-            assert args[0][0] == "Hello world"
+            # Verify synthesis was called
+            mock_synthesis.assert_called_once()
+            args = mock_synthesis.call_args
+            assert args[1]["text"] == "Hello world"
 
             # Verify output file exists
             out_path = Path(tmpdir) / "test-job" / "narration" / "chapter_1.wav"

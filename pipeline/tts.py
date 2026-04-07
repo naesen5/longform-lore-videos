@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-from TTS.tts import tts
+from TTS.tts.utils.synthesis import synthesis
+from TTS.tts.utils import find_module
 from TTS.configs.xts_config import XtsConfig
 from pyloudnorm import loudnorm
 
@@ -46,9 +47,11 @@ class NarrationGenerator:
 
     def _load_model(self, model_id: str):
         """Load TTS model by name."""
-        # Coqui TTS uses a model loader pattern
-        from TTS.tts.models import load_model
-        return load_model(model_name=model_id, use_gpu=False)
+        # Coqui TTS uses a module finder pattern
+        from TTS.tts.utils import find_module
+        module_path = find_module(model_id)
+        model = find_module(module_path)
+        return model
 
     def generate_chapter(
         self,
@@ -68,22 +71,27 @@ class NarrationGenerator:
         output_path = out_dir / f"chapter_{chapter_num}.wav"
 
         model = self._init_model()
+        config = model.CONFIG
 
-        # Generate audio using TTS.tts.tts()
+        # Generate audio using TTS synthesis function
         if self.preset == "hq" and self.voice_path:
-            # Voice cloning mode
-            audio = tts(
-                text=text,
-                speaker_wav=self.voice_path,
-                language="en",
+            # Voice cloning mode - pass speaker_wav as style_wav
+            audio = synthesis(
                 model=model,
+                text=text,
+                CONFIG=config,
+                use_cuda=False,
+                style_wav=self.voice_path,
+                language_id=0,
             )
         else:
             # Standard mode
-            audio = tts(
-                text=text,
-                language="en",
+            audio = synthesis(
                 model=model,
+                text=text,
+                CONFIG=config,
+                use_cuda=False,
+                language_id=0,
             )
 
         # Normalize to -18 LUFS
