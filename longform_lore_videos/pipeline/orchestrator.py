@@ -73,7 +73,7 @@ class PipelineOrchestrator:
         self._jobs: Dict[str, asyncio.Task] = {}
         self._queue: List[str] = []
         self._cancellation_flags: Dict[str, asyncio.Event] = {}
-        self._tts_generator = NarrationGenerator(preset=ts_preset, voice_path=ts_voice_path, output_dir=str(self.output_dir))
+        self._tts_generator = NarrationGenerator(preset=tts_preset, voice_path=tts_voice_path, output_dir=str(self.output_dir))
 
     async def submit_job(self, job_id: str, chapter_count: int = 1) -> JobState:
         """Submit a new job to the queue.
