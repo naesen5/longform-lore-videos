@@ -252,7 +252,7 @@ class PipelineOrchestrator:
         # Generate TTS for each chapter
         durations = []
         for i, chapter_text in enumerate(chapters, start=1):
-            chapter_path = stage_path / f"chapter_{i}.wav"
+            stage_path / f"chapter_{i}.wav"
             duration = await self._tts_generator.generate_chapter(
                 text=chapter_text,
                 chapter_num=i,

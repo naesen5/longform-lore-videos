@@ -8,7 +8,6 @@ import importlib
 import subprocess
 from pathlib import Path
 
-import pytest
 
 
 REPO_DIR = Path(__file__).parent.parent
