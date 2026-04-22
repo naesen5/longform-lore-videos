@@ -1,7 +1,5 @@
 name: CI
-
 on: [push, pull_request]
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,3 +15,5 @@ jobs:
       - name: Run tests
         run: |
           pytest -v
+      - name: Run linting
+        run: pip install ruff && ruff check .

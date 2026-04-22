@@ -6,11 +6,13 @@ setup(
     packages=find_packages(),
     install_requires=[
         "moviepy>=2.2.0",
+        "pydantic>=2.0",
     ],
     extras_require={
         "dev": [
             "pytest>=7.0",
             "Pillow>=9.0",
+            "pytest-asyncio>=0.21.0",
         ],
     },
 )
