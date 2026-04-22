@@ -1,1 +1,1 @@
-# Test package for longform-lore-videos
+"""Tests for longform-lore-videos."""
