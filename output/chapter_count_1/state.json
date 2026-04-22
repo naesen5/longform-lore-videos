@@ -1,0 +1,11 @@
+{
+  "job_id": "chapter_count_1",
+  "status": "complete",
+  "stage": "assembly",
+  "progress_pct": 100,
+  "started_at": "2026-04-22T04:58:26.159992",
+  "completed_at": "2026-04-22T04:58:26.704785",
+  "error": null,
+  "output_path": "output/chapter_count_1",
+  "chapter_count": 1
+}

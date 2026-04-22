@@ -12,6 +12,8 @@ dependencies = [
     "moviepy>=2.0",
     "pillow>=10.0",
     "fastapi>=0.100.0",
+    "TTS>=0.22.0",
+    "pyloudnorm>=0.2.0",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +23,7 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.1",
     "mypy>=1.0",
+    "fastapi>=0.100.0",
     "httpx>=0.24.0",
 ]
 

@@ -9,6 +9,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
+from pipeline.tts import NarrationGenerator
+
 
 class JobStatus(str, Enum):
     """Job status values."""
@@ -59,16 +61,19 @@ class PipelineOrchestrator:
         ("assembly", JobStatus.ASSEMBLING_VIDEO),
     ]
 
-    def __init__(self, output_dir: str = "output"):
+    def __init__(self, output_dir: str = "output", tts_preset: str = "standard", tts_voice_path: Optional[str] = None):
         """Initialize orchestrator.
 
         Args:
             output_dir: Base directory for job outputs.
+            tts_preset: TTS quality preset (draft, standard, hq).
+            tts_voice_path: Path to speaker WAV for voice cloning (HQ preset).
         """
         self.output_dir = Path(output_dir)
         self._jobs: Dict[str, asyncio.Task] = {}
         self._queue: List[str] = []
         self._cancellation_flags: Dict[str, asyncio.Event] = {}
+        self._tts_generator = NarrationGenerator(preset=tts_preset, voice_path=tts_voice_path, output_dir=str(self.output_dir))
 
     async def submit_job(self, job_id: str, chapter_count: int = 1) -> JobState:
         """Submit a new job to the queue.
@@ -185,8 +190,12 @@ class PipelineOrchestrator:
         )
         await self._save_state(job_id, state)
 
-        # Simulate stage work (replace with actual implementation)
-        await asyncio.sleep(0.1)
+        # Run stage-specific logic
+        if stage_name == "narration":
+            state = await self._run_narration_stage(job_id, state, stage_path)
+        else:
+            # Simulate stage work (replace with actual implementation)
+            await asyncio.sleep(0.1)
 
         # Mark stage as completed
         stage_path.mkdir(parents=True, exist_ok=True)
@@ -206,6 +215,49 @@ class PipelineOrchestrator:
             }
         )
         await self._save_state(job_id, state)
+
+        return state
+
+    async def _run_narration_stage(self, job_id: str, state: JobState, stage_path: Path) -> JobState:
+        """Run the narration stage using TTS.
+
+        Args:
+            job_id: Job identifier.
+            state: Current job state.
+            stage_path: Output directory for this stage.
+
+        Returns:
+            Updated job state.
+        """
+        script_path = self.output_dir / job_id / "script.txt"
+        if not script_path.exists():
+            raise FileNotFoundError(f"Script not found: {script_path}")
+
+        with open(script_path) as f:
+            script_text = f.read()
+
+        # Simple split: assume each paragraph is a chapter
+        chapters = [p.strip() for p in script_text.split("\n\n") if p.strip()]
+        if not chapters:
+            chapters = ["Placeholder narration text."]
+
+        # Generate TTS for each chapter
+        durations = []
+        for i, chapter_text in enumerate(chapters, start=1):
+            chapter_path = stage_path / f"chapter_{i}.wav"
+            duration = self._tts_generator.generate_chapter(
+                text=chapter_text,
+                chapter_num=i,
+                job_id=job_id,
+                output_dir=str(self.output_dir),
+            )
+            durations.append(duration)
+
+        # Store durations in state
+        state = state.model_copy(update={
+            "narration_durations": durations,
+            "narration_chapter_count": len(chapters),
+        })
 
         return state
 
