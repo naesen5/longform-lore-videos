@@ -151,3 +151,55 @@ def _check_tool(name: str) -> str:
     if shutil.which(name):
         return "available"
     return "not found"
+
+
+# Script generation settings
+SCRIPT_SETTINGS = {
+    "model_path": str(OPTIONAL_MODELS["llama_model"]["path"]),
+    "n_ctx": 2048,
+    "n_threads": 4,
+    "max_tokens": 2000,
+    "temperature": 0.7,
+    "output_dir": "output",
+}
+
+
+def validate_script_settings() -> dict:
+    """Validate script generation configuration.
+
+    Returns:
+        Dict with validation results: {key: {"valid": bool, "value": ..., "error": ...}}
+    """
+    results = {}
+    for key, default in SCRIPT_SETTINGS.items():
+        results[key] = {"valid": True, "value": default, "error": None}
+
+    # Validate model path exists or is empty (will be set by user)
+    model_path = SCRIPT_SETTINGS["model_path"]
+    if model_path and not Path(model_path).exists():
+        results["model_path"]["valid"] = False
+        results["model_path"]["error"] = f"Model file not found: {model_path}"
+        logger.warning("Script model not found: %s", model_path)
+
+    # Validate n_ctx is positive
+    if SCRIPT_SETTINGS["n_ctx"] <= 0:
+        results["n_ctx"]["valid"] = False
+        results["n_ctx"]["error"] = "n_ctx must be positive"
+
+    # Validate n_threads is positive
+    if SCRIPT_SETTINGS["n_threads"] <= 0:
+        results["n_threads"]["valid"] = False
+        results["n_threads"]["error"] = "n_threads must be positive"
+
+    # Validate max_tokens is positive
+    if SCRIPT_SETTINGS["max_tokens"] <= 0:
+        results["max_tokens"]["valid"] = False
+        results["max_tokens"]["error"] = "max_tokens must be positive"
+
+    # Validate temperature is in range
+    temp = SCRIPT_SETTINGS["temperature"]
+    if temp < 0.0 or temp > 2.0:
+        results["temperature"]["valid"] = False
+        results["temperature"]["error"] = "temperature must be between 0.0 and 2.0"
+
+    return results

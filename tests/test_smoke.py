@@ -125,3 +125,43 @@ class TestDependencies:
         parts = version.split(".")
         major = int(parts[0])
         assert major >= 10, f"pillow >= 10.0 required, got {version}"
+
+
+class TestScriptSettings:
+    """Smoke tests for script generation settings in config."""
+
+    def test_validate_script_settings_returns_dict(self):
+        from longform_lore_videos.config import validate_script_settings
+        result = validate_script_settings()
+        assert isinstance(result, dict)
+        assert "model_path" in result
+        assert "n_ctx" in result
+        assert "n_threads" in result
+        assert "max_tokens" in result
+        assert "temperature" in result
+
+    def test_validate_script_settings_n_ctx_positive(self):
+        from longform_lore_videos.config import validate_script_settings
+        result = validate_script_settings()
+        assert result["n_ctx"]["valid"] is True
+        assert result["n_ctx"]["value"] > 0
+
+    def test_validate_script_settings_n_threads_positive(self):
+        from longform_lore_videos.config import validate_script_settings
+        result = validate_script_settings()
+        assert result["n_threads"]["valid"] is True
+        assert result["n_threads"]["value"] > 0
+
+    def test_validate_script_settings_temperature_in_range(self):
+        from longform_lore_videos.config import validate_script_settings
+        result = validate_script_settings()
+        assert result["temperature"]["valid"] is True
+        assert 0.0 <= result["temperature"]["value"] <= 2.0
+
+    def test_generate_script_exists_and_executable(self):
+        import os
+        import stat
+        script_path = os.path.join(os.path.dirname(__file__), '..', 'scripts', 'generate_script.sh')
+        assert os.path.isfile(script_path), "generate_script.sh not found"
+        mode = os.stat(script_path).st_mode
+        assert mode & stat.S_IXUSR, "generate_script.sh is not executable"
