@@ -5,6 +5,7 @@ import json
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -73,37 +74,68 @@ class TestPipelineOrchestrator:
 
     @pytest.mark.asyncio
     async def test_run_job_complete(self):
-        """Run a job to completion."""
-        orch = PipelineOrchestrator()
-        await orch.submit_job("test123", chapter_count=1)
-        state = await orch.run_job("test123")
-        assert state.status == JobStatus.COMPLETE
-        assert state.progress_pct == 100
+        """Run a job to completion (mocked stages)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orch = PipelineOrchestrator(output_dir=tmpdir)
+            await orch.submit_job("test123", chapter_count=1)
+
+            # Mock _run_stage to simulate successful stage execution
+            async def mock_run_stage(job_id, stage_name, stage_status, state):
+                stage_path = Path(tmpdir) / job_id / stage_name
+                stage_path.mkdir(parents=True, exist_ok=True)
+                (stage_path / "done").touch()
+                return state
+
+            with patch.object(orch, "_run_stage", mock_run_stage):
+                state = await orch.run_job("test123")
+
+            assert state.status == JobStatus.COMPLETE
+            assert state.progress_pct == 100
 
     @pytest.mark.asyncio
     async def test_run_job_skips_completed_stages(self):
         """Restarting job skips completed stages."""
-        orch = PipelineOrchestrator()
-        await orch.submit_job("test123", chapter_count=1)
-        state = await orch.run_job("test123")
-        assert state.status == JobStatus.COMPLETE
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orch = PipelineOrchestrator(output_dir=tmpdir)
+            await orch.submit_job("test123", chapter_count=1)
 
-        state = await orch.run_job("test123")
-        assert state.status == JobStatus.COMPLETE
-        assert state.progress_pct == 100
+            async def mock_run_stage(job_id, stage_name, stage_status, state):
+                stage_path = Path(tmpdir) / job_id / stage_name
+                stage_path.mkdir(parents=True, exist_ok=True)
+                (stage_path / "done").touch()
+                return state
+
+            with patch.object(orch, "_run_stage", mock_run_stage):
+                state = await orch.run_job("test123")
+
+            assert state.status == JobStatus.COMPLETE
+
+            # Second run should skip all stages (already done)
+            state = await orch.run_job("test123")
+            assert state.status == JobStatus.COMPLETE
+            assert state.progress_pct == 100
 
     @pytest.mark.asyncio
     async def test_cancel_job(self):
         """Cancel a running job."""
-        orch = PipelineOrchestrator()
-        await orch.submit_job("test123", chapter_count=1)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orch = PipelineOrchestrator(output_dir=tmpdir)
+            await orch.submit_job("test123", chapter_count=1)
 
-        state = await orch.run_job("test123")
-        assert state.status == JobStatus.COMPLETE
+            # Set cancellation flag before running
+            orch._cancellation_flags["test123"] = asyncio.Event()
 
-        orch._cancellation_flags["test123"] = asyncio.Event()
-        state = await orch.run_job("test123")
-        assert state.status == JobStatus.COMPLETE
+            async def mock_run_stage(job_id, stage_name, stage_status, state):
+                stage_path = Path(tmpdir) / job_id / stage_name
+                stage_path.mkdir(parents=True, exist_ok=True)
+                (stage_path / "done").touch()
+                return state
+
+            with patch.object(orch, "_run_stage", mock_run_stage):
+                state = await orch.run_job("test123")
+
+            # With cancellation flag set, job should fail
+            assert state.status == JobStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_job_state_persistence(self):
@@ -111,7 +143,15 @@ class TestPipelineOrchestrator:
         with tempfile.TemporaryDirectory() as tmpdir:
             orch = PipelineOrchestrator(output_dir=tmpdir)
             await orch.submit_job("test123")
-            await orch.run_job("test123")
+
+            async def mock_run_stage(job_id, stage_name, stage_status, state):
+                stage_path = Path(tmpdir) / job_id / stage_name
+                stage_path.mkdir(parents=True, exist_ok=True)
+                (stage_path / "done").touch()
+                return state
+
+            with patch.object(orch, "_run_stage", mock_run_stage):
+                await orch.run_job("test123")
 
             state_path = Path(tmpdir) / "test123" / "state.json"
             assert state_path.exists()
@@ -119,3 +159,28 @@ class TestPipelineOrchestrator:
             with open(state_path) as f:
                 data = json.load(f)
             assert data["status"] == "complete"
+
+    @pytest.mark.asyncio
+    async def test_run_job_not_found(self):
+        """Run a non-existent job raises ValueError."""
+        orch = PipelineOrchestrator()
+        with pytest.raises(ValueError, match="not found"):
+            await orch.run_job("nonexistent")
+
+    @pytest.mark.asyncio
+    async def test_get_state(self):
+        """Get job state from disk."""
+        orch = PipelineOrchestrator()
+        await orch.submit_job("test123", chapter_count=2)
+        state = orch.get_state("test123")
+        assert state is not None
+        assert state.job_id == "test123"
+        assert state.status == JobStatus.QUEUED
+        assert state.chapter_count == 2
+
+    @pytest.mark.asyncio
+    async def test_get_state_not_found(self):
+        """Get state for non-existent job returns None."""
+        orch = PipelineOrchestrator()
+        state = orch.get_state("nonexistent")
+        assert state is None

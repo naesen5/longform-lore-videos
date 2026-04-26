@@ -61,7 +61,12 @@ class PipelineOrchestrator:
         ("assembly", JobStatus.ASSEMBLING_VIDEO),
     ]
 
-    def __init__(self, output_dir: str = "output", tts_preset: str = "standard", tts_voice_path: Optional[str] = None):
+    def __init__(
+        self,
+        output_dir: str = "output",
+        tts_preset: str = "standard",
+        tts_voice_path: Optional[str] = None,
+    ):
         """Initialize orchestrator.
 
         Args:
@@ -73,7 +78,11 @@ class PipelineOrchestrator:
         self._jobs: Dict[str, asyncio.Task] = {}
         self._queue: List[str] = []
         self._cancellation_flags: Dict[str, asyncio.Event] = {}
-        self._tts_generator = NarrationGenerator(preset=tts_preset, voice_path=tts_voice_path, output_dir=str(self.output_dir))
+        self._tts_generator = NarrationGenerator(
+            preset=tts_preset,
+            voice_path=tts_voice_path,
+            output_dir=str(self.output_dir),
+        )
 
     async def submit_job(self, job_id: str, chapter_count: int = 1) -> JobState:
         """Submit a new job to the queue.
@@ -218,7 +227,9 @@ class PipelineOrchestrator:
 
         return state
 
-    async def _run_narration_stage(self, job_id: str, state: JobState, stage_path: Path) -> JobState:
+    async def _run_narration_stage(
+        self, job_id: str, state: JobState, stage_path: Path
+    ) -> JobState:
         """Run the narration stage using TTS.
 
         Args:
@@ -244,7 +255,6 @@ class PipelineOrchestrator:
         # Generate TTS for each chapter
         durations = []
         for i, chapter_text in enumerate(chapters, start=1):
-            chapter_path = stage_path / f"chapter_{i}.wav"
             duration = self._tts_generator.generate_chapter(
                 text=chapter_text,
                 chapter_num=i,
