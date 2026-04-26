@@ -1,11 +1,11 @@
 """Gradio UI for longform-lore-videos pipeline."""
 
 import os
-import requests
 import time
 from typing import Optional
 
 import gradio as gr
+import requests
 
 # API configuration
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
@@ -71,7 +71,7 @@ class LongformLoreGradio:
                 "complete": "success",
                 "failed": "error",
             }
-            status_color = status_map.get(data.get("status"), "neutral")
+            status_map.get(data.get("status"), "neutral")
 
             # Update progress bar
             progress_pct = data.get("progress_pct", 0)
@@ -213,7 +213,7 @@ class LongformLoreGradio:
                         )
 
                         with script_preview:
-                            script_text = gr.Markdown()
+                            gr.Markdown()
 
             with gr.Tab("History"):
                 gr.Markdown("### Job History")
