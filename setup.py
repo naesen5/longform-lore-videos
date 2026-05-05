@@ -11,6 +11,7 @@ setup(
     extras_require={
         "dev": [
             "pytest>=7.0",
+            "Pillow>=9.0",
             "pytest-asyncio>=0.21.0",
         ],
     },
