@@ -1,5 +1,4 @@
 """TTS narration pipeline: per-chapter audio generation using Coqui TTS."""
-
 import warnings
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -45,12 +44,10 @@ class NarrationGenerator:
             raise ValueError(
                 f"Invalid preset: {preset}. Must be one of {list(self.PRESETS.keys())}"
             )
-
         self.preset = preset
         self.voice_path = voice_path
         self.output_dir = Path(output_dir)
         self._model: Any = None
-
         config = self.PRESETS[preset]
         self._model_id: str = str(config["model"])
         self._sample_rate: int = int(config["sample_rate"])
@@ -62,69 +59,33 @@ class NarrationGenerator:
         return self._model
 
     def generate_chapter(
-        self,
-        text: str,
-        chapter_num: int,
-        job_id: str,
+        self, text: str, chapter_num: int, job_id: str,
         output_dir: Optional[str] = None,
     ) -> float:
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
-
         if len(text) > 5000:
             raise ValueError("Text too long (max 5000 chars)")
-
         out_dir = Path(output_dir or self.output_dir) / job_id / "narration"
         out_dir.mkdir(parents=True, exist_ok=True)
         output_path = out_dir / f"chapter_{chapter_num}.wav"
-
         model = self._init_model()
-
-        # Generate audio using TTS.tts()
         if self.preset == "hq" and self.voice_path:
-            # Voice cloning mode
-            audio = model.tts_with_vc(
-                text=text,
-                speaker_wav=self.voice_path,
-                language="en",
-            )
+            audio = model.tts_with_vc(text=text, speaker_wav=self.voice_path, language="en")
         else:
-            # Standard mode
-            audio = model.tts(
-                text=text,
-                language="en",
-            )
-
-        # Normalize to -18 LUFS
-        normalized = loudnorm(
-            audio, target=-18.0, sample_rate=self._sample_rate
-        )
+            audio = model.tts(text=text, language="en")
+        normalized = loudnorm(audio, target=-18.0, sample_rate=self._sample_rate)
         normalized = normalized.astype(np.float32)
-
-        # Save WAV with correct sample rate
         import soundfile as sf
         sf.write(str(output_path), normalized, self._sample_rate, subtype="PCM_16")
-
-        # Measure actual duration
         duration = len(normalized) / self._sample_rate
-
         return round(duration, 3)
 
-    def generate_batch(
-        self,
-        chapters: list[str],
-        job_id: str,
-        output_dir: Optional[str] = None,
-    ) -> list[float]:
+    def generate_batch(self, chapters: list[str], job_id: str,
+                       output_dir: Optional[str] = None) -> list[float]:
         durations: list[float] = []
         for i, text in enumerate(chapters, start=1):
-            duration = self.generate_chapter(
-                text=text,
-                chapter_num=i,
-                job_id=job_id,
-                output_dir=output_dir,
-            )
+            duration = self.generate_chapter(text=text, chapter_num=i, job_id=job_id, output_dir=output_dir)
             durations.append(duration)
             print(f"Chapter {i}: {duration:.3f}s")
-
         return durations

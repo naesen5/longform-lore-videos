@@ -1,35 +1,81 @@
 """Tests for script generation pipeline."""
 
+import json
+from unittest.mock import patch
+
 import pytest
 
-from longform_lore_videos.pipeline.script import ScriptGenerator
+from longform_lore_videos.pipeline.script import (
+    Script, ScriptChapter, ScriptGenerator, Scene, Speaker,
+)
+
+
+class TestScriptModels:
+    def test_speaker_creation(self):
+        speaker = Speaker(name="John", role="narrator")
+        assert speaker.name == "John"
+        assert speaker.role == "narrator"
+
+    def test_scene_creation(self):
+        scene = Scene(speaker="John", text="Hello world", description="First scene")
+        assert scene.speaker == "John"
+        assert scene.text == "Hello world"
+        assert scene.description == "First scene"
+
+    def test_script_chapter_creation(self):
+        chapter = ScriptChapter(title="Chapter 1", scenes=[Scene(speaker="John", text="Text")])
+        assert chapter.title == "Chapter 1"
+        assert len(chapter.scenes) == 1
+
+    def test_script_creation(self):
+        script = Script(
+            title="Test Script",
+            chapters=[ScriptChapter(title="C1", scenes=[Scene(speaker="J", text="T")])],
+        )
+        assert script.title == "Test Script"
+        assert len(script.chapters) == 1
 
 
 class TestScriptGenerator:
-    """Tests for ScriptGenerator."""
+    def test_init_defaults(self):
+        gen = ScriptGenerator()
+        assert gen.n_ctx == 2048
+        assert gen.n_threads == 4
+        assert gen._loaded is False
 
-    @pytest.fixture
-    def generator(self):
-        """Create ScriptGenerator instance."""
-        return ScriptGenerator()
+    def test_init_custom(self):
+        gen = ScriptGenerator(model_path="/path/model.gguf", n_ctx=1024, n_threads=2)
+        assert gen.model_path == "/path/model.gguf"
+        assert gen.n_ctx == 1024
+        assert gen.n_threads == 2
 
-    def test_generate_script_success(self, generator):
-        """Generate script with valid inputs."""
-        result = generator.generate_script(
-            topic="Test topic",
-            genre="historical",
-            chapter_count=3,
-        )
+    def test_load_import_error(self):
+        with patch.dict("sys.modules", {"llama_cpp": None}):
+            gen = ScriptGenerator()
+            with pytest.raises(ImportError, match="llama-cpp-python not installed"):
+                gen.load()
 
-        assert result["title"] == "Script for Test topic"
-        assert len(result["chapters"]) == 3
+    def test_build_prompt_format(self):
+        gen = ScriptGenerator()
+        prompt = gen._build_prompt("Sample lore", "Test Title")
+        assert "Sample lore" in prompt
+        assert "Test Title" in prompt
+        assert "Script JSON:" in prompt
 
-    def test_genre_applied(self, generator):
-        """Genre is included in title."""
-        result = generator.generate_script(
-            topic="Test",
-            genre="fantasy",
-            chapter_count=1,
-        )
+    def test_parse_output_valid_json(self):
+        gen = ScriptGenerator()
+        output = json.dumps({
+            "chapters": [{
+                "title": "Chapter 1",
+                "scenes": [{"speaker": "John", "text": "Hello", "description": "Desc"}],
+            }]
+        })
+        result = gen._parse_output(output)
+        assert result["chapters"][0]["title"] == "Chapter 1"
+        assert result["chapters"][0]["scenes"][0]["speaker"] == "John"
 
-        assert result["title"] == "Script for Test"
+    def test_parse_output_fallback(self):
+        gen = ScriptGenerator()
+        result = gen._parse_output("Plain text output")
+        assert result["chapters"][0]["title"] == "Untitled Chapter"
+        assert result["chapters"][0]["scenes"][0]["speaker"] == "Unknown"
