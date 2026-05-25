@@ -10,6 +10,7 @@ setup(
         "librosa>=0.11.0",
         "moviepy>=2.2.0",
         "pydantic>=2.0",
+        "Pillow>=9.0",
     ],
     extras_require={
         "dev": [
@@ -17,6 +18,6 @@ setup(
             "pytest-asyncio>=0.21.0",
             "black>=23.0.0",
             "mypy>=1.0.0",
-        ]
+        ],
     },
 )
