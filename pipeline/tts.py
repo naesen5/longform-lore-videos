@@ -1,5 +1,4 @@
 """TTS narration pipeline: per-chapter audio generation using Coqui TTS."""
-import os
 import warnings
 from pathlib import Path
 from typing import Optional

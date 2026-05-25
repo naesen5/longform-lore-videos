@@ -5,11 +5,12 @@ import json
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from pipeline.tts import NarrationGenerator
+if TYPE_CHECKING:
+    from pipeline.tts import NarrationGenerator
 
 
 class JobStatus(str, Enum):
@@ -61,19 +62,34 @@ class PipelineOrchestrator:
         ("assembly", JobStatus.ASSEMBLING_VIDEO),
     ]
 
-    def __init__(self, output_dir: str = "output", tts_preset: str = "standard", tts_voice_path: Optional[str] = None):
+    def __init__(
+        self,
+        output_dir: str = "output",
+        tts_preset: str = "standard",
+        tts_voice_path: Optional[str] = None,
+        tts_generator: Optional[Union["NarrationGenerator", object]] = None,
+    ):
         """Initialize orchestrator.
 
         Args:
             output_dir: Base directory for job outputs.
             tts_preset: TTS quality preset (draft, standard, hq).
             tts_voice_path: Path to speaker WAV for voice cloning (HQ preset).
+            tts_generator: Optional TTS generator instance for dependency injection.
         """
         self.output_dir = Path(output_dir)
         self._jobs: Dict[str, asyncio.Task] = {}
         self._queue: List[str] = []
         self._cancellation_flags: Dict[str, asyncio.Event] = {}
-        self._tts_generator = NarrationGenerator(preset=tts_preset, voice_path=tts_voice_path, output_dir=str(self.output_dir))
+        if tts_generator is not None:
+            self._tts_generator = tts_generator
+        else:
+            from pipeline.tts import NarrationGenerator
+            self._tts_generator = NarrationGenerator(
+                preset=tts_preset,
+                voice_path=tts_voice_path,
+                output_dir=str(self.output_dir),
+            )
 
     async def submit_job(self, job_id: str, chapter_count: int = 1) -> JobState:
         """Submit a new job to the queue.
@@ -208,7 +224,9 @@ class PipelineOrchestrator:
 
         return state
 
-    async def _run_narration_stage(self, job_id: str, state: JobState, stage_path: Path) -> JobState:
+    async def _run_narration_stage(
+        self, job_id: str, state: JobState, stage_path: Path
+    ) -> JobState:
         """Run the narration stage using TTS.
 
         Args:
@@ -234,8 +252,8 @@ class PipelineOrchestrator:
         # Generate TTS for each chapter
         durations = []
         for i, chapter_text in enumerate(chapters, start=1):
-            chapter_path = stage_path / f"chapter_{i}.wav"
-            duration = self._tts_generator.generate_chapter(
+            stage_path / f"chapter_{i}.wav"
+            duration = await self._tts_generator.generate_chapter(
                 text=chapter_text,
                 chapter_num=i,
                 job_id=job_id,
