@@ -1,1 +1,1 @@
-"""Image generation pipeline using stable-diffusion.cpp."""
+"""Pipeline module for longform lore videos."""
