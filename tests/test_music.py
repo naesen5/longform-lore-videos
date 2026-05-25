@@ -1,5 +1,10 @@
 """Unit tests for MusicGenerator."""
 import pytest
+
+try:
+    import diffusers
+except ImportError:
+    diffusers = None
 from unittest.mock import MagicMock, patch, PropertyMock
 import os
 import tempfile
@@ -25,6 +30,7 @@ class MockAudioPipeline:
 class TestMusicGenerator:
     """Test suite for MusicGenerator."""
     
+    @pytest.mark.skipif(diffusers is None, reason='diffusers not installed')
     @patch('diffusers.StableAudioPipeline')
     def test_generate_creates_file(self, mock_pipeline_class):
         """Test that generate creates the expected output file."""
@@ -45,6 +51,7 @@ class TestMusicGenerator:
             assert os.path.exists(output_path)
             assert output_path.endswith(".wav")
     
+    @pytest.mark.skipif(diffusers is None, reason='diffusers not installed')
     @patch('diffusers.StableAudioPipeline')
     def test_generate_duration(self, mock_pipeline_class):
         """Test that generated audio has correct duration."""
