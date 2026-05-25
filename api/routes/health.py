@@ -34,7 +34,10 @@ async def health_check() -> HealthResponse:
 
     return HealthResponse(
         status="ok",
-        models={k: {"available": v.available, "path": v.path, "reason": v.reason} for k, v in models.items()},
+        models={
+            k: {"available": v.available, "path": v.path, "reason": v.reason}
+            for k, v in models.items()
+        },
         disk_free_gb=disk_free_gb,
         queue_depth=0,
     )

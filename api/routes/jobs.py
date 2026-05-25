@@ -122,11 +122,13 @@ async def stream_job_events(job_id: str):
                 break
 
             if current_state.status == JobStatus.FAILED:
-                yield f"data: {JobEvent(data=current_state.error or 'Job failed').model_dump_json()}\n\n"
+                err_msg = current_state.error or "Job failed"
+                yield f"data: {JobEvent(data=err_msg).model_dump_json()}\n\n"
                 break
 
             if current_state.progress_pct != prev_progress:
-                yield f"data: {JobEvent(data=f'Progress: {current_state.progress_pct}%').model_dump_json()}\n\n"
+                progress_msg = f"Progress: {current_state.progress_pct}%"
+                yield f"data: {JobEvent(data=progress_msg).model_dump_json()}\n\n"
                 prev_progress = current_state.progress_pct
 
             if current_state.status == JobStatus.COMPLETE:
@@ -149,7 +151,11 @@ async def stream_job_events(job_id: str):
     "/{job_id}/download",
     responses={
         404: {"model": ErrorResponse},
-        200: {"content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}},
+        200: {
+            "content": {
+                "application/octet-stream": {"schema": {"type": "string", "format": "binary"}}
+            }
+        },
     },
 )
 async def download_job(job_id: str):
@@ -207,14 +213,25 @@ async def get_job_preview(job_id: str):
         # Generate preview from final.mp4 if available
         final_path = Path(state.output_path) / "final.mp4"
         if final_path.exists():
-            subprocess.run([
-                "ffmpeg", "-i", str(final_path),
-                "-vf", "scale=640:360",
-                "-c:v", "libx264",
-                "-preset", "fast",
-                "-crf", "28",
-                "-y", str(preview_path)
-            ], check=True, capture_output=True)
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-i",
+                    str(final_path),
+                    "-vf",
+                    "scale=640:360",
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "fast",
+                    "-crf",
+                    "28",
+                    "-y",
+                    str(preview_path),
+                ],
+                check=True,
+                capture_output=True,
+            )
         else:
             raise HTTPException(
                 status_code=404,
@@ -249,7 +266,7 @@ async def list_jobs(
     job_dirs = sorted(output_dir.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True)
 
     jobs = []
-    for job_dir in job_dirs[offset:offset + limit]:
+    for job_dir in job_dirs[offset : offset + limit]:
         state = orchestrator.get_state(job_dir.name)
         if state is None:
             continue
@@ -257,17 +274,19 @@ async def list_jobs(
         if status is not None and state.status.value != status:
             continue
 
-        jobs.append(JobStatusResponse(
-            job_id=state.job_id,
-            status=state.status.value,
-            stage=state.stage,
-            progress_pct=state.progress_pct,
-            started_at=state.started_at,
-            completed_at=state.completed_at,
-            error=state.error,
-            output_path=state.output_path,
-            chapter_count=state.chapter_count,
-        ))
+        jobs.append(
+            JobStatusResponse(
+                job_id=state.job_id,
+                status=state.status.value,
+                stage=state.stage,
+                progress_pct=state.progress_pct,
+                started_at=state.started_at,
+                completed_at=state.completed_at,
+                error=state.error,
+                output_path=state.output_path,
+                chapter_count=state.chapter_count,
+            )
+        )
 
     total = len(list(output_dir.iterdir()))
 
@@ -297,6 +316,7 @@ async def cancel_or_delete_job(job_id: str) -> Response:
 
     if state.status == JobStatus.COMPLETE:
         import shutil
+
         output_path = Path(state.output_path)
         if output_path.exists():
             shutil.rmtree(output_path)

@@ -1,0 +1,11 @@
+{
+  "job_id": "run_job_2",
+  "status": "complete",
+  "stage": "assembly",
+  "progress_pct": 100,
+  "started_at": "2026-04-22T04:58:24.394194",
+  "completed_at": "2026-04-22T04:58:24.937205",
+  "error": null,
+  "output_path": "output/run_job_2",
+  "chapter_count": 1
+}

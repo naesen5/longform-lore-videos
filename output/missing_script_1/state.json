@@ -1,0 +1,11 @@
+{
+  "job_id": "missing_script_1",
+  "status": "failed",
+  "stage": "script",
+  "progress_pct": 10,
+  "started_at": "2026-04-22T04:58:26.046270",
+  "completed_at": "2026-04-22T04:58:26.153943",
+  "error": "Script not found: output/missing_script_1/script.txt",
+  "output_path": "output/missing_script_1",
+  "chapter_count": 1
+}

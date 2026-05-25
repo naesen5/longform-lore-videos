@@ -1,11 +1,11 @@
 """Gradio UI for longform-lore-videos pipeline."""
 
 import os
-import requests
 import time
 from typing import Optional
 
 import gradio as gr
+import requests
 
 # API configuration
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")

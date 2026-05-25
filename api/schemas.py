@@ -33,9 +33,7 @@ class JobSubmission(BaseModel):
     genre: Genre = Field(..., description="Genre category")
     chapters: int = Field(..., ge=1, le=20, description="Number of chapters (1-20)")
     quality: Quality = Field(default=Quality.STANDARD, description="Output quality")
-    voice_clone_url: Optional[str] = Field(
-        default=None, description="Optional voice clone URL"
-    )
+    voice_clone_url: Optional[str] = Field(default=None, description="Optional voice clone URL")
 
 
 class JobResponse(BaseModel):
@@ -43,9 +41,7 @@ class JobResponse(BaseModel):
 
     job_id: str = Field(..., description="Unique job identifier")
     status: str = Field(..., description="Current job status")
-    estimated_duration_s: int = Field(
-        ..., ge=1, description="Estimated duration in seconds"
-    )
+    estimated_duration_s: int = Field(..., ge=1, description="Estimated duration in seconds")
 
 
 class JobStatusResponse(BaseModel):
